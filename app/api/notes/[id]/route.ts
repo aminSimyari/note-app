@@ -12,14 +12,8 @@ type Context = {
 
 /**
  * Handles DELETE requests to /api/notes/:id
- * @param request The standard Request object
- * @param context The route context containing dynamic segments
  */
-export async function DELETE(
-  request: Request,
-  context: Context // 👈 Simplified type to prevent Vercel Build error
-) {
-  // Access the id from context.params
+export async function DELETE(request: Request, context: Context) {
   const { id } = context.params;
 
   if (!id) {
@@ -29,12 +23,15 @@ export async function DELETE(
     );
   }
 
+  // Call the function from the data store
   const wasDeleted = deleteNote(id);
 
   if (wasDeleted) {
-    // 204 No Content is standard for successful deletion
+    // CRITICAL FIX: Must return 204 No Content for successful deletion
+    // This is necessary for the frontend (NotesList.tsx) to recognize success.
     return new NextResponse(null, { status: 204 });
   } else {
+    // Note not found (404)
     return NextResponse.json({ error: "Note not found." }, { status: 404 });
   }
 }

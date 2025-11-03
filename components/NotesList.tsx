@@ -12,6 +12,7 @@ interface NotesListProps {
   onNotesUpdated: (notes: Note[]) => void;
 }
 
+// Helper function to safely find the category name
 const getCategoryName = (
   categoryId: string | undefined,
   categories: Category[]
@@ -26,41 +27,51 @@ export default function NotesList({
   onNoteDeleted,
   onNotesUpdated,
 }: NotesListProps) {
+  // Use initialNotes as the starting state for client-side manipulation
   const [notes, setNotes] = useState(initialNotes);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  // Function to handle note deletion
   const handleDelete = async (id: string) => {
-    setDeletingId(id);
+    setDeletingId(id); // Set loading state for the specific note
+
     try {
       const response = await fetch(`/api/notes/${id}`, {
         method: "DELETE",
       });
 
       if (response.status === 204) {
+        // Successful deletion: Filter the notes array immediately
         const updatedNotes = notes.filter((note) => note.id !== id);
-        setNotes(updatedNotes);
-        onNotesUpdated(updatedNotes);
-        onNoteDeleted(id);
+        setNotes(updatedNotes); // Update local component state
+        onNotesUpdated(updatedNotes); // Notify parent component (NoteAppWrapper)
+        onNoteDeleted(id); // If needed for tracking
       } else {
+        // Server returned a non-204 status (e.g., 404)
         alert("Error deleting note. Note might not be found.");
       }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
+      // Handle general network errors
       alert("Network error during deletion.");
     } finally {
+      // Always reset loading state
       setDeletingId(null);
     }
   };
 
-  // Case 1: Empty State (This section is the one that was causing the most confusion)
+  // Case 1: Empty State
   if (notes.length === 0) {
     return (
       <div className="flex-1 p-4 flex items-center justify-center bg-gray-50">
-        <p className="text-lg text-gray-500">You do not have any notes yet.</p>
+        <p className="text-lg text-gray-500">
+          You don&apos;t have any notes yet.
+        </p>
       </div>
     );
   }
 
-  // Case 2: Success State (List of notes)
+  // Case 2: Success State (Display the list of notes)
   return (
     <div className="flex-1 p-4 overflow-y-auto">
       <h2 className="text-xl font-bold mb-4 text-gray-800">Note List</h2>
@@ -79,7 +90,6 @@ export default function NotesList({
                   </span>
                 )}
               </div>
-              {/* Simplification: Displaying content directly without substring/line-clamp */}
               <p className="text-sm text-gray-600">
                 {note.content || "No content provided."}
               </p>
