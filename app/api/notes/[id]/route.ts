@@ -1,20 +1,26 @@
 // app/api/notes/[id]/route.ts
+// FINAL TYPE-SAFE FIX for Next.js Route Handler
 
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server"; // Import NextRequest
 import { deleteNote } from "@/lib/data-store";
 
-// Using a simplified Context type for better build compatibility
-type Context = {
+// Define the standard Context structure for dynamic routes
+interface Context {
   params: {
     id: string;
   };
-};
+}
 
 /**
  * Handles DELETE requests to /api/notes/:id
+ * Uses NextRequest for robust type handling of context.
  */
-export async function DELETE(request: Request, context: Context) {
-  const { id } = context.params;
+export async function DELETE(
+  request: NextRequest, // Use NextRequest for better context compatibility
+  context: Context // Use the defined interface
+) {
+  // Read the ID directly from context.params
+  const id: string = context.params.id;
 
   if (!id) {
     return NextResponse.json(
@@ -23,15 +29,13 @@ export async function DELETE(request: Request, context: Context) {
     );
   }
 
-  // Call the function from the data store
   const wasDeleted = deleteNote(id);
 
   if (wasDeleted) {
-    // CRITICAL FIX: Must return 204 No Content for successful deletion
-    // This is necessary for the frontend (NotesList.tsx) to recognize success.
+    // 204 No Content for success
     return new NextResponse(null, { status: 204 });
   } else {
-    // Note not found (404)
+    // 404 Not Found if deleteNote returns false
     return NextResponse.json({ error: "Note not found." }, { status: 404 });
   }
 }
