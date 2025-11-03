@@ -3,12 +3,26 @@
 import { NextResponse } from "next/server";
 import { getNotes, createNote } from "@/lib/data-store";
 
+/**
+ * Handles GET requests to /api/notes
+ */
 export async function GET() {
-  const notes = getNotes();
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  return NextResponse.json({ data: notes }, { status: 200 });
+  try {
+    const notes = getNotes();
+    // Return notes under the 'data' key for consistency
+    return NextResponse.json({ data: notes }, { status: 200 });
+  } catch (error) {
+    console.error("Error fetching notes:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error: Failed to fetch notes." },
+      { status: 500 }
+    );
+  }
 }
 
+/**
+ * Handles POST requests to /api/notes
+ */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -16,18 +30,26 @@ export async function POST(request: Request) {
 
     if (!title || typeof title !== "string") {
       return NextResponse.json(
-        { error: "Title is required." },
+        { error: "Title is required and must be a string." },
         { status: 400 }
       );
     }
 
     const newNote = createNote({ title, content, categoryId });
-    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    return NextResponse.json({ data: newNote }, { status: 201 });
-  } catch (error) {
+    // CRITICAL FIX: Ensure the response contains the new note under the 'data' key
+    // to satisfy the client component (NoteForm/NoteAppWrapper).
     return NextResponse.json(
-      { error: "Invalid data format or internal error." },
+      {
+        message: "Note created successfully.",
+        data: newNote,
+      },
+      { status: 201 } // Status 201 Created
+    );
+  } catch (error) {
+    console.error("Error creating note:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error: Failed to process request." },
       { status: 500 }
     );
   }
