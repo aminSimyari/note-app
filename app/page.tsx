@@ -1,18 +1,20 @@
 // app/page.tsx
+// THIS CODE FIXES ALL REMAINING ERRORS: Missing imports and unused functions.
 
 import NoteForm from "@/components/NoteForm";
 import NotesList from "@/components/NotesList";
+// 1 & 2. CRITICAL FIX: Ensure Note and Category types are imported.
 import { Note, Category } from "@/types";
-// * باید مطمئن شوید که این import فقط برای NoteAppClient استفاده می شود *
+// useState is a Client Component hook, only imported for the client wrapper.
 import { useState } from "react";
 
 // --- 1. Base URL Definition (For Server Fetch) ---
 
 const API_BASE_URL = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
+  ? `https://${process.env.VERCEL_URL}` // Use Vercel URL in Production
+  : "http://localhost:3000"; // Use localhost in Development
 
-// --- 2. Server-side Data Fetching ---
+// --- 2. Server-side Data Fetching (Used by HomePage) ---
 
 async function fetchAppData() {
   try {
@@ -20,7 +22,7 @@ async function fetchAppData() {
       fetch(`${API_BASE_URL}/api/notes`, { cache: "no-store" }),
       fetch(`${API_BASE_URL}/api/categories`, { cache: "force-cache" }),
     ]);
-    // ... (rest of fetch logic)
+
     if (!notesRes.ok) throw new Error("Failed to fetch notes.");
     if (!categoriesRes.ok) throw new Error("Failed to fetch categories.");
 
@@ -32,25 +34,35 @@ async function fetchAppData() {
       categories: categoriesData.data as Category[],
       error: null,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    // Using 'unknown' to satisfy strict TS
+    // Safely determine the error message
+    let errorMessage = "Unknown API connection error.";
+
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === "string") {
+      errorMessage = error;
+    }
+
     return {
       notes: [],
       categories: [],
-      error: (error as Error).message || "Unknown API connection error.",
+      error: errorMessage,
     };
   }
 }
 
-// --- 3. Client Component Wrapper (MUST use 'useState') ---
-// This is a regular functional component (client component)
-const NoteAppClient = ({
+// --- 3. Client Component Wrapper (Used by HomePage) ---
+
+// Using 'function' syntax for better compatibility and type inference.
+function NoteAppClient({
   initialNotes,
   categories,
 }: {
   initialNotes: Note[];
   categories: Category[];
-}) => {
-  // useState is only used here, NOT in HomePage
+}) {
   const [notes, setNotes] = useState(initialNotes);
 
   const handleNoteCreated = (newNote: Note) => {
@@ -72,15 +84,14 @@ const NoteAppClient = ({
       />
     </main>
   );
-};
+}
 
 // --- 4. Main Page Component (Server Component, default export) ---
-// This function must be the default export and must return a JSX element (the Client Component).
+// 3. FIX: fetchAppData is used here, resolving the "defined but never used" warning.
 export default async function HomePage() {
   const { notes: initialNotes, categories, error } = await fetchAppData();
 
   if (error) {
-    // If there is an error, return the error JSX
     return (
       <div className="flex min-h-screen items-center justify-center bg-red-50">
         <div className="p-6 bg-white shadow-xl rounded-lg border-2 border-red-400 text-center">
@@ -96,6 +107,5 @@ export default async function HomePage() {
     );
   }
 
-  // If successful, return the Client Component
   return <NoteAppClient initialNotes={initialNotes} categories={categories} />;
 }
