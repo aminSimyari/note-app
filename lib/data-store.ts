@@ -1,14 +1,16 @@
-import { Note, Category } from "../types";
-// If VS Code gives an error here, try changing the path to '@/types':
-// import { Note, Category } from '@/types';
+// lib/data-store.ts
 
-// Initial mock data definitions
+import { Note, Category } from "@/types";
+
+// Initial mock data definitions (categories are static)
 const categories: Category[] = [
   { id: "1", name: "Personal" },
   { id: "2", name: "Work" },
   { id: "3", name: "Ideas" },
 ];
 
+// CRITICAL FIX: The notes array MUST be defined with 'let'
+// so the deleteNote function can reassign the array.
 let notes: Note[] = [
   {
     id: "a1",
@@ -37,7 +39,7 @@ export function createNote(data: {
   content?: string;
   categoryId?: string;
 }): Note {
-  // crypto.randomUUID generates a unique ID
+  // Generates a unique ID
   const newNote: Note = {
     id: crypto.randomUUID(),
     title: data.title,
@@ -46,15 +48,17 @@ export function createNote(data: {
     createdAt: new Date().toISOString(),
   };
 
-  notes.push(newNote);
+  notes.unshift(newNote); // Add to the beginning of the list
   return newNote;
 }
 
+// CRITICAL FIX: This function reassigns the 'notes' array
 export function deleteNote(id: string): boolean {
   const initialLength = notes.length;
   // Filter out the note with the matching ID
   notes = notes.filter((note) => note.id !== id);
-  return notes.length < initialLength; // True if an item was removed
+  // Returns true if the length changed (note was deleted)
+  return notes.length < initialLength;
 }
 
 // ************* Categories Logic *************
