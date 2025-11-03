@@ -1,10 +1,9 @@
 // app/api/notes/[id]/route.ts
-// THIS IS THE CRITICAL FIX for the Type Error in Vercel build.
 
 import { NextResponse } from "next/server";
 import { deleteNote } from "@/lib/data-store";
 
-// تعریف ساده و مستقیم نوع داده برای Params
+// Using a simplified Context type for better build compatibility
 type Context = {
   params: {
     id: string;
@@ -14,13 +13,13 @@ type Context = {
 /**
  * Handles DELETE requests to /api/notes/:id
  * @param request The standard Request object
- * @param context The route context (MUST match the defined type)
+ * @param context The route context containing dynamic segments
  */
 export async function DELETE(
   request: Request,
-  context: Context // 👈 استفاده از تایپ ساده Context
+  context: Context // 👈 Simplified type to prevent Vercel Build error
 ) {
-  // دسترسی مستقیم به id از context.params
+  // Access the id from context.params
   const { id } = context.params;
 
   if (!id) {
@@ -33,7 +32,7 @@ export async function DELETE(
   const wasDeleted = deleteNote(id);
 
   if (wasDeleted) {
-    // 204 No Content
+    // 204 No Content is standard for successful deletion
     return new NextResponse(null, { status: 204 });
   } else {
     return NextResponse.json({ error: "Note not found." }, { status: 404 });
