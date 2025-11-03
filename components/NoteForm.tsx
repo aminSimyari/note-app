@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { Category, Note } from "../lib/types";
 
 interface Props {
@@ -8,93 +8,97 @@ interface Props {
   onNoteCreated: (note: Note) => void;
 }
 
-const NoteForm: React.FC<Props> = ({ categories, onNoteCreated }) => {
+export default function NoteForm({ categories, onNoteCreated }: Props) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim()) {
-      setError("Title is required");
-      return;
-    }
+  const submit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      setError(null);
 
-    setLoading(true);
-    setError("");
+      if (!title.trim()) {
+        setError("Title is required");
+        return;
+      }
 
-    try {
-      const newNote: Note = {
-        id: Date.now().toString(),
-        title: title.trim(),
-        content: content.trim(),
-        category: categoryId || categories[0].id,
-        createdAt: new Date().toISOString(),
-      };
+      setLoading(true);
+      try {
+        const newNote: Note = {
+          id: Date.now().toString(),
+          title: title.trim(),
+          content: content.trim(),
+          category: categoryId || categories[0]?.id,
+          createdAt: new Date().toISOString(),
+        };
 
-      onNoteCreated(newNote);
+        // IMPORTANT: call parent callback (synchronous and safe here)
+        onNoteCreated(newNote);
 
-      // Reset form
-      setTitle("");
-      setContent("");
-      setCategoryId("");
-    } catch (err) {
-      setError("Failed to create note");
-    } finally {
-      setLoading(false);
-    }
-  };
+        // Reset form
+        setTitle("");
+        setContent("");
+        setCategoryId("");
+      } catch (err: unknown) {
+        // safe handling of unknown error type
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError(String(err) || "Failed to create note");
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [title, content, categoryId, categories, onNoteCreated]
+  );
 
   return (
-    <div className="md:w-1/3 p-4 bg-white rounded shadow-md mb-4 md:mb-0 md:mr-4">
+    <aside className="md:w-1/3 p-4 bg-white rounded shadow-md mb-4">
       <h2 className="text-xl font-semibold mb-4">Create Note</h2>
-      <form className="space-y-4" onSubmit={handleSubmit}>
-        {/* Title */}
+
+      <form onSubmit={submit} className="space-y-3">
         <input
-          type="text"
-          placeholder="Title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          placeholder="Title"
           className="w-full border p-2 rounded"
         />
 
-        {/* Content */}
         <textarea
-          placeholder="Content"
           value={content}
           onChange={(e) => setContent(e.target.value)}
+          placeholder="Content"
           className="w-full border p-2 rounded"
+          rows={4}
         />
 
-        {/* Category Select */}
         <select
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
           className="w-full border p-2 rounded"
         >
-          <option value="">--No Category--</option>
-          {categories.map((c) => (
+          <option value="">-- No category --</option>
+          {categories?.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
             </option>
           ))}
         </select>
 
-        {/* Submit Button */}
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
+          className="w-full bg-blue-600 text-white p-2 rounded disabled:opacity-60"
         >
           {loading ? "Saving..." : "Save Note"}
         </button>
 
-        {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+        {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
       </form>
-    </div>
+    </aside>
   );
-};
-
-export default NoteForm;
+}

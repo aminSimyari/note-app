@@ -1,32 +1,49 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Note, Category } from "@/lib/types";
+import React, { useState, useEffect, useCallback } from "react";
+import { Note, Category } from "../lib/types";
 import NoteForm from "./NoteForm";
 import NotesList from "./NotesList";
 
 interface NoteAppWrapperProps {
-  initialNotes: Note[];
   categories: Category[];
 }
 
-const NoteAppWrapper: React.FC<NoteAppWrapperProps> = ({ categories }) => {
+export default function NoteAppWrapper({ categories }: NoteAppWrapperProps) {
+  // IMPORTANT: start with empty array so server-render and initial client render match
   const [notes, setNotes] = useState<Note[]>([]);
 
-  // Load from localStorage on mount
+  // Load saved notes from localStorage after mount (client-only)
   useEffect(() => {
-    const storedNotes = localStorage.getItem("notes");
-    if (storedNotes) setNotes(JSON.parse(storedNotes));
+    try {
+      const raw = localStorage.getItem("notes");
+      if (!raw) return;
+      const parsed: Note[] = JSON.parse(raw);
+      // Only update state if parsed is different / non-empty to avoid unnecessary re-renders
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        setNotes(parsed);
+      }
+    } catch {
+      // ignore parse/storage errors
+    }
   }, []);
 
-  // Save to localStorage whenever notes change
+  // Persist notes to localStorage whenever notes change
   useEffect(() => {
-    localStorage.setItem("notes", JSON.stringify(notes));
+    try {
+      localStorage.setItem("notes", JSON.stringify(notes));
+    } catch {
+      // ignore storage errors
+    }
   }, [notes]);
 
-  const addNote = (newNote: Note) => setNotes((prev) => [newNote, ...prev]);
-  const removeNote = (id: string) =>
-    setNotes((prev) => prev.filter((n) => n.id !== id));
+  const addNote = useCallback((n: Note) => {
+    setNotes((prev) => [n, ...prev]);
+  }, []);
+
+  const removeNote = useCallback((id: string) => {
+    setNotes((prev) => prev.filter((p) => p.id !== id));
+  }, []);
 
   return (
     <main className="min-h-screen flex flex-col md:flex-row bg-gray-50 p-4">
@@ -38,6 +55,4 @@ const NoteAppWrapper: React.FC<NoteAppWrapperProps> = ({ categories }) => {
       />
     </main>
   );
-};
-
-export default NoteAppWrapper;
+}

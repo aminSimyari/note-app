@@ -1,9 +1,10 @@
+"use client";
+
 import NoteAppWrapper from "@/components/NoteAppWrapper";
-import { getNotes, getCategories } from "@/lib/data-store";
+import { getCategories } from "@/lib/data-store";
+import { Category } from "@/lib/types";
 
-export default async function HomePage() {
-  const initialNotes = getNotes();
-  const categories = getCategories();
-
-  return <NoteAppWrapper initialNotes={initialNotes} categories={categories} />;
+export default function HomePage() {
+  const categories: Category[] = getCategories();
+  return <NoteAppWrapper categories={categories} />;
 }
