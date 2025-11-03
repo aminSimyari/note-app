@@ -1,16 +1,16 @@
 // lib/data-store.ts
 
 import { Note, Category } from "@/types";
+// CRITICAL FIX: Use the reliable 'uuid' library for ID generation
+import { v4 as uuid } from "uuid";
 
-// Initial mock data definitions (categories are static)
+// Initial mock data definitions
 const categories: Category[] = [
   { id: "1", name: "Personal" },
   { id: "2", name: "Work" },
   { id: "3", name: "Ideas" },
 ];
 
-// CRITICAL FIX: The notes array MUST be defined with 'let'
-// so the deleteNote function can reassign the array.
 let notes: Note[] = [
   {
     id: "a1",
@@ -39,25 +39,22 @@ export function createNote(data: {
   content?: string;
   categoryId?: string;
 }): Note {
-  // Generates a unique ID
+  // Use uuid() for guaranteed ID format compatibility
   const newNote: Note = {
-    id: crypto.randomUUID(),
+    id: uuid(),
     title: data.title,
     content: data.content,
     categoryId: data.categoryId,
     createdAt: new Date().toISOString(),
   };
 
-  notes.unshift(newNote); // Add to the beginning of the list
+  notes.unshift(newNote);
   return newNote;
 }
 
-// CRITICAL FIX: This function reassigns the 'notes' array
 export function deleteNote(id: string): boolean {
   const initialLength = notes.length;
-  // Filter out the note with the matching ID
   notes = notes.filter((note) => note.id !== id);
-  // Returns true if the length changed (note was deleted)
   return notes.length < initialLength;
 }
 
