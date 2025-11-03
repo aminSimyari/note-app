@@ -1,20 +1,16 @@
 // app/page.tsx
-// THIS CODE FIXES ALL REMAINING ERRORS: Missing imports and unused functions.
+// This is now a pure Server Component, fixing the 'useState' error.
 
-import NoteForm from "@/components/NoteForm";
-import NotesList from "@/components/NotesList";
-// 1 & 2. CRITICAL FIX: Ensure Note and Category types are imported.
+import NoteAppWrapper from "@/components/NoteAppWrapper"; // Import the new client wrapper
 import { Note, Category } from "@/types";
-// useState is a Client Component hook, only imported for the client wrapper.
-import { useState } from "react";
 
 // --- 1. Base URL Definition (For Server Fetch) ---
 
 const API_BASE_URL = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}` // Use Vercel URL in Production
-  : "http://localhost:3000"; // Use localhost in Development
+  ? `https://${process.env.VERCEL_URL}`
+  : "http://localhost:3000";
 
-// --- 2. Server-side Data Fetching (Used by HomePage) ---
+// --- 2. Server-side Data Fetching ---
 
 async function fetchAppData() {
   try {
@@ -35,8 +31,6 @@ async function fetchAppData() {
       error: null,
     };
   } catch (error: unknown) {
-    // Using 'unknown' to satisfy strict TS
-    // Safely determine the error message
     let errorMessage = "Unknown API connection error.";
 
     if (error instanceof Error) {
@@ -53,45 +47,13 @@ async function fetchAppData() {
   }
 }
 
-// --- 3. Client Component Wrapper (Used by HomePage) ---
+// --- 3. Main Page Component (Server Component, default export) ---
 
-// Using 'function' syntax for better compatibility and type inference.
-function NoteAppClient({
-  initialNotes,
-  categories,
-}: {
-  initialNotes: Note[];
-  categories: Category[];
-}) {
-  const [notes, setNotes] = useState(initialNotes);
-
-  const handleNoteCreated = (newNote: Note) => {
-    setNotes((prevNotes) => [newNote, ...prevNotes]);
-  };
-
-  const handleNotesUpdated = (updatedNotes: Note[]) => {
-    setNotes(updatedNotes);
-  };
-
-  return (
-    <main className="min-h-screen flex flex-col md:flex-row bg-gray-50">
-      <NoteForm categories={categories} onNoteCreated={handleNoteCreated} />
-      <NotesList
-        initialNotes={notes}
-        categories={categories}
-        onNoteDeleted={() => {}}
-        onNotesUpdated={handleNotesUpdated}
-      />
-    </main>
-  );
-}
-
-// --- 4. Main Page Component (Server Component, default export) ---
-// 3. FIX: fetchAppData is used here, resolving the "defined but never used" warning.
 export default async function HomePage() {
   const { notes: initialNotes, categories, error } = await fetchAppData();
 
   if (error) {
+    // Error state rendered by Server Component
     return (
       <div className="flex min-h-screen items-center justify-center bg-red-50">
         <div className="p-6 bg-white shadow-xl rounded-lg border-2 border-red-400 text-center">
@@ -107,5 +69,6 @@ export default async function HomePage() {
     );
   }
 
-  return <NoteAppClient initialNotes={initialNotes} categories={categories} />;
+  // Success: Pass data to the Client Wrapper
+  return <NoteAppWrapper initialNotes={initialNotes} categories={categories} />;
 }
