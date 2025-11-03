@@ -1,42 +1,43 @@
-// components/NoteAppWrapper.tsx
 "use client";
 
-import { useState } from "react";
-import { Note, Category } from "@/types";
+import React, { useState, useEffect } from "react";
+import { Note, Category } from "@/lib/types";
 import NoteForm from "./NoteForm";
 import NotesList from "./NotesList";
 
-// This is the component that handles all client-side state
 interface NoteAppWrapperProps {
   initialNotes: Note[];
   categories: Category[];
 }
 
-export default function NoteAppWrapper({
-  initialNotes,
-  categories,
-}: NoteAppWrapperProps) {
-  const [notes, setNotes] = useState(initialNotes);
+const NoteAppWrapper: React.FC<NoteAppWrapperProps> = ({ categories }) => {
+  const [notes, setNotes] = useState<Note[]>([]);
 
-  const handleNoteCreated = (newNote: Note) => {
-    // Add the new note to the top of the list
-    setNotes((prevNotes) => [newNote, ...prevNotes]);
-  };
+  // Load from localStorage on mount
+  useEffect(() => {
+    const storedNotes = localStorage.getItem("notes");
+    if (storedNotes) setNotes(JSON.parse(storedNotes));
+  }, []);
 
-  const handleNotesUpdated = (updatedNotes: Note[]) => {
-    // Update the list after a deletion event
-    setNotes(updatedNotes);
-  };
+  // Save to localStorage whenever notes change
+  useEffect(() => {
+    localStorage.setItem("notes", JSON.stringify(notes));
+  }, [notes]);
+
+  const addNote = (newNote: Note) => setNotes((prev) => [newNote, ...prev]);
+  const removeNote = (id: string) =>
+    setNotes((prev) => prev.filter((n) => n.id !== id));
 
   return (
-    <main className="min-h-screen flex flex-col md:flex-row bg-gray-50">
-      <NoteForm categories={categories} onNoteCreated={handleNoteCreated} />
+    <main className="min-h-screen flex flex-col md:flex-row bg-gray-50 p-4">
+      <NoteForm categories={categories} onNoteCreated={addNote} />
       <NotesList
-        initialNotes={notes}
+        notes={notes}
         categories={categories}
-        onNoteDeleted={() => {}}
-        onNotesUpdated={handleNotesUpdated}
+        onNoteDeleted={removeNote}
       />
     </main>
   );
-}
+};
+
+export default NoteAppWrapper;

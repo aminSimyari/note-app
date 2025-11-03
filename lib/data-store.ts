@@ -1,53 +1,30 @@
-// lib/data-store.ts
-
-import { Note, Category } from "@/types";
-// CRITICAL FIX: Use the reliable 'uuid' library for ID generation
+import { Note, Category } from "./types";
 import { v4 as uuid } from "uuid";
 
-// Initial mock data definitions
+let notes: Note[] = [];
+
 const categories: Category[] = [
-  { id: "1", name: "Personal" },
-  { id: "2", name: "Work" },
-  { id: "3", name: "Ideas" },
+  { id: "cat-1", name: "Work" },
+  { id: "cat-2", name: "Personal" },
+  { id: "cat-3", name: "Ideas" },
 ];
 
-let notes: Note[] = [
-  {
-    id: "a1",
-    title: "Grocery List",
-    content: "Bread, milk, fruits, and vegetables",
-    categoryId: "1",
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: "b2",
-    title: "Next.js Project",
-    content: "Finish API section and start UI development.",
-    categoryId: "2",
-    createdAt: new Date(Date.now() - 3600000).toISOString(),
-  },
-];
-
-// ************* Notes Logic *************
-
-export function getNotes() {
+export function getNotes(): Note[] {
   return notes;
 }
 
 export function createNote(data: {
   title: string;
   content?: string;
-  categoryId?: string;
+  category?: string;
 }): Note {
-  // Use uuid() for guaranteed ID format compatibility
   const newNote: Note = {
     id: uuid(),
     title: data.title,
-    content: data.content,
-    categoryId: data.categoryId,
+    content: data.content || "",
+    category: data.category || "cat-1",
     createdAt: new Date().toISOString(),
   };
-
   notes.unshift(newNote);
   return newNote;
 }
@@ -58,8 +35,6 @@ export function deleteNote(id: string): boolean {
   return notes.length < initialLength;
 }
 
-// ************* Categories Logic *************
-
-export function getCategories() {
+export function getCategories(): Category[] {
   return categories;
 }
