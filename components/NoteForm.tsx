@@ -21,7 +21,6 @@ export default function NoteForm({ categories, onNoteCreated }: NoteFormProps) {
     e.preventDefault();
     setError(null);
 
-    // Frontend validation
     if (!title.trim()) {
       setError("Title is required.");
       return;
@@ -49,13 +48,14 @@ export default function NoteForm({ categories, onNoteCreated }: NoteFormProps) {
 
       const { data: newNote } = await response.json();
 
-      // Success: Reset form and notify parent component
+      // CRITICAL FIX FOR RELOAD: Call the passed function with the new note immediately
       onNoteCreated(newNote);
+
+      // Reset form fields
       setTitle("");
       setContent("");
       setCategoryId("");
     } catch (err: unknown) {
-      // 👈 رفع خطای any
       let errorMessage = "An issue occurred while connecting to the server.";
 
       if (err instanceof Error) {
@@ -74,7 +74,6 @@ export default function NoteForm({ categories, onNoteCreated }: NoteFormProps) {
     <div className="p-4 border-b md:border-r md:border-b-0 border-gray-200 md:w-1/3 lg:w-1/4">
       <h2 className="text-xl font-bold mb-4 text-gray-800">Create New Note</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Title Field */}
         <div>
           <label
             htmlFor="title"
@@ -92,7 +91,6 @@ export default function NoteForm({ categories, onNoteCreated }: NoteFormProps) {
           />
         </div>
 
-        {/* Content Field */}
         <div>
           <label
             htmlFor="content"
@@ -110,7 +108,6 @@ export default function NoteForm({ categories, onNoteCreated }: NoteFormProps) {
           />
         </div>
 
-        {/* Category Select Field */}
         <div>
           <label
             htmlFor="category"
@@ -126,6 +123,7 @@ export default function NoteForm({ categories, onNoteCreated }: NoteFormProps) {
             disabled={isLoading}
           >
             <option value="">-- No Category --</option>
+            {/* Categories are correctly fetched and displayed here */}
             {categories.map((cat) => (
               <option key={cat.id} value={cat.id}>
                 {cat.name}
@@ -134,7 +132,6 @@ export default function NoteForm({ categories, onNoteCreated }: NoteFormProps) {
           </select>
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
           className={`w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
@@ -147,7 +144,6 @@ export default function NoteForm({ categories, onNoteCreated }: NoteFormProps) {
           {isLoading ? "Sending..." : "Save Note"}
         </button>
 
-        {/* Error Message */}
         {error && (
           <p className="text-sm text-red-600 mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
             {error}
